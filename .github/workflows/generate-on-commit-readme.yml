@@ -1,5 +1,11 @@
-name: generate-on-commit-readme.yml
-on: [ push ]
+
+name: Generate README
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,31 +17,32 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          persist-credentials: true
 
       - name: Install Quarkdown
-        run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
-
-      - name: Generate Quarkdown documentation
-        run: quarkdown c Docs/main.qd --pdf --out-name="README"
-
-      - name: Move file to root
         run: |
-          mv quarkdown-output/README.pdf ./README.pdf
+          curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
+
+      - name: Generate Markdown documentation
+        run: |
+          quarkdown c Docs/main.qd \
+            --render markdown \
+            --out-name="README"
+
+      - name: Move README to root
+        run: |
+          mv quarkdown-output/README.md ./README.md
 
       - name: Commit and push changes
         run: |
-          git config --global user.name "GitHub Readme Updater Bot"
-          git config --global user.email "actions@users.noreply.github.com"
-          git add README.pdf
-          
+          git config user.name "GitHub Readme Updater Bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          git add README.md
+
           if git diff --cached --quiet; then
-            echo "README.pdf has not changed."
+            echo "README.md already up to date"
             exit 0
           fi
 
-          git commit -m "Updated README.pdf"
+          git commit -m "docs: update README.md"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
