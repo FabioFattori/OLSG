@@ -1,0 +1,34 @@
+name: generate-on-commit-readme.yml
+on: [ push ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Quarkdown
+        run: curl -fsSL https://raw.githubusercontent.com/quarkdown-labs/get-quarkdown/refs/heads/main/install.sh | sudo env "PATH=$PATH" bash
+
+      - name: Generate Quarkdown documentation
+        run: quarkdown c Docs/main.qd --pdf --out-name="README"
+
+      - name: Move file to root
+        run: |
+          mv quarkdown-output/README.pdf ./README.pdf
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Readme Updater Bot"
+          git config --global user.email "actions@users.noreply.github.com"
+          git add output.json
+          git commit -m "Updated README.pdf"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
